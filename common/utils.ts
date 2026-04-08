@@ -132,7 +132,13 @@ export async function plankaRequest(
   if (!options.skipAuth) {
     try {
       const token = await getAuthToken();
-      headers["Authorization"] = `Bearer ${token}`;
+      // Personal API tokens (PLANKA_API_TOKEN) use X-Api-Key;
+      // tokens obtained via email/password login use Bearer.
+      if (process.env.PLANKA_API_TOKEN) {
+        headers["X-Api-Key"] = token;
+      } else {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
     } catch (error: unknown) {
       const errorMessage = error instanceof Error
         ? error.message
