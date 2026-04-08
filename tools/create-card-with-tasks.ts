@@ -22,7 +22,7 @@ export const createCardWithTasksSchema = z.object({
     comment: z.string().optional().describe(
         "Optional comment to add to the card",
     ),
-    position: z.number().optional().describe(
+    position: z.coerce.number().optional().describe(
         "Optional position for the card in the list",
     ),
 });

@@ -19,7 +19,7 @@ import { PlankaListSchema } from "../common/types.js";
 export const CreateListSchema = z.object({
     boardId: z.string().describe("Board ID"),
     name: z.string().describe("List name"),
-    position: z.number().optional().describe("List position (default: 65535)"),
+    position: z.coerce.number().optional().describe("List position (default: 65535)"),
 });
 
 /**
@@ -39,7 +39,7 @@ export const GetListsSchema = z.object({
 export const UpdateListSchema = z.object({
     id: z.string().describe("List ID"),
     name: z.string().optional().describe("List name"),
-    position: z.number().optional().describe("List position"),
+    position: z.coerce.number().optional().describe("List position"),
 });
 
 /**

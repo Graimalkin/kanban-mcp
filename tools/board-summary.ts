@@ -118,27 +118,34 @@ export async function getBoardSummary(params: GetBoardSummaryParams) {
             0,
         );
 
-        // Find specific lists by name
+        // Find specific lists by name (names may be null on some Planka versions)
+        const listNameEquals = (list: any, target: string) =>
+            typeof list.name === "string" &&
+            list.name.toLowerCase() === target;
+
         const backlogList = listsWithCards.find((list: any) =>
-            list.name.toLowerCase() === "backlog"
+            listNameEquals(list, "backlog")
         );
         const inProgressList = listsWithCards.find((list: any) =>
-            list.name.toLowerCase() === "in progress"
+            listNameEquals(list, "in progress")
         );
         const testingList = listsWithCards.find((list: any) =>
-            list.name.toLowerCase() === "testing"
+            listNameEquals(list, "testing")
         );
         const doneList = listsWithCards.find((list: any) =>
-            list.name.toLowerCase() === "done"
+            listNameEquals(list, "done")
         );
 
-        // Count cards with specific labels
+        // Count cards with specific labels (label names may be null)
+        const labelNameEquals = (label: any, target: string) =>
+            typeof label.name === "string" &&
+            label.name.toLowerCase() === target;
+
         const urgentCards = listsWithCards.flatMap((list: any) => list.cards)
             .filter((card: any) =>
                 card.labelIds?.some((labelId: string) =>
                     boardLabels.find((label: any) =>
-                        label.id === labelId &&
-                        label.name.toLowerCase() === "urgent"
+                        label.id === labelId && labelNameEquals(label, "urgent")
                     )
                 )
             ).length;
@@ -147,8 +154,7 @@ export async function getBoardSummary(params: GetBoardSummaryParams) {
             .filter((card: any) =>
                 card.labelIds?.some((labelId: string) =>
                     boardLabels.find((label: any) =>
-                        label.id === labelId &&
-                        label.name.toLowerCase() === "bug"
+                        label.id === labelId && labelNameEquals(label, "bug")
                     )
                 )
             ).length;
