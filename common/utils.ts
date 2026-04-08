@@ -42,7 +42,7 @@ async function authenticateAgent(): Promise<string> {
 
   if (!email || !password) {
     throw new Error(
-      "PLANKA_AGENT_EMAIL and PLANKA_AGENT_PASSWORD environment variables are required",
+      "Provide either PLANKA_API_TOKEN, or PLANKA_AGENT_EMAIL and PLANKA_AGENT_PASSWORD",
     );
   }
 
@@ -91,6 +91,11 @@ async function authenticateAgent(): Promise<string> {
 async function getAuthToken(): Promise<string> {
   if (agentToken) {
     return agentToken;
+  }
+  const apiToken = process.env.PLANKA_API_TOKEN;
+  if (apiToken) {
+    agentToken = apiToken;
+    return apiToken;
   }
   return authenticateAgent();
 }
