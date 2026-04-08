@@ -19,7 +19,7 @@ import { PlankaTaskSchema } from "../common/types.js";
 export const CreateTaskSchema = z.object({
     cardId: z.string().describe("Card ID"),
     name: z.string().describe("Task name"),
-    position: z.number().optional().describe("Task position (default: 65535)"),
+    position: z.coerce.number().optional().describe("Task position (default: 65535)"),
 });
 
 /**
@@ -61,7 +61,7 @@ export const UpdateTaskSchema = z.object({
     isCompleted: z.boolean().optional().describe(
         "Whether the task is completed",
     ),
-    position: z.number().optional().describe("Task position"),
+    position: z.coerce.number().optional().describe("Task position"),
 });
 
 /**

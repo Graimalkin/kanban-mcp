@@ -22,7 +22,7 @@ export const CreateCardSchema = z.object({
     listId: z.string().describe("List ID"),
     name: z.string().describe("Card name"),
     description: z.string().optional().describe("Card description"),
-    position: z.number().optional().describe("Card position (default: 65535)"),
+    position: z.coerce.number().optional().describe("Card position (default: 65535)"),
 });
 
 /**
@@ -54,7 +54,7 @@ export const UpdateCardSchema = z.object({
     id: z.string().describe("Card ID"),
     name: z.string().optional().describe("Card name"),
     description: z.string().optional().describe("Card description"),
-    position: z.number().optional().describe("Card position"),
+    position: z.coerce.number().optional().describe("Card position"),
     dueDate: z.string().optional().describe("Card due date (ISO format)"),
     isCompleted: z.boolean().optional().describe(
         "Whether the card is completed",
@@ -64,14 +64,14 @@ export const UpdateCardSchema = z.object({
 export const MoveCardSchema = z.object({
     id: z.string().describe("Card ID"),
     listId: z.string().describe("Target list ID"),
-    position: z.number().optional().describe(
+    position: z.coerce.number().optional().describe(
         "Card position in the target list (default: 65535)",
     ),
 });
 
 export const DuplicateCardSchema = z.object({
     id: z.string().describe("Card ID to duplicate"),
-    position: z.number().optional().describe(
+    position: z.coerce.number().optional().describe(
         "Position for the duplicated card (default: 65535)",
     ),
 });

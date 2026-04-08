@@ -56,13 +56,16 @@ server.tool(
     id: z.string().optional().describe("The ID of the project or board"),
     projectId: z.string().optional().describe("The ID of the project"),
     name: z.string().optional().describe("The name of the board"),
-    position: z.number().optional().describe("The position of the board"),
+    position: z.coerce.number().optional().describe("The position of the board"),
     type: z.string().optional().describe("The type of the board"),
-    page: z
+    page: z.coerce
       .number()
       .optional()
       .describe("The page number for pagination (1-indexed)"),
-    perPage: z.number().optional().describe("The number of items per page"),
+    perPage: z.coerce
+      .number()
+      .optional()
+      .describe("The number of items per page"),
     boardId: z
       .string()
       .optional()
@@ -83,11 +86,10 @@ server.tool(
 
     switch (args.action) {
       case "get_projects":
-        if (!args.page || !args.perPage)
-          throw new Error(
-            "page and perPage are required for get_projects action"
-          );
-        result = await projects.getProjects(args.page, args.perPage);
+        result = await projects.getProjects(
+          args.page ?? 1,
+          args.perPage ?? 30
+        );
         break;
 
       case "get_project":
@@ -171,7 +173,7 @@ server.tool(
     id: z.string().optional().describe("The ID of the list"),
     boardId: z.string().optional().describe("The ID of the board"),
     name: z.string().optional().describe("The name of the list"),
-    position: z.number().optional().describe("The position of the list"),
+    position: z.coerce.number().optional().describe("The position of the list"),
   },
   async (args) => {
     let result;
@@ -257,7 +259,7 @@ server.tool(
       .describe("The ID of the project (if moving between projects)"),
     name: z.string().optional().describe("The name of the card"),
     description: z.string().optional().describe("The description of the card"),
-    position: z.number().optional().describe("The position of the card"),
+    position: z.coerce.number().optional().describe("The position of the card"),
     dueDate: z
       .string()
       .optional()
@@ -475,7 +477,7 @@ server.tool(
       ])
       .optional()
       .describe("The color of the label"),
-    position: z.number().optional().describe("The position of the label"),
+    position: z.coerce.number().optional().describe("The position of the label"),
   },
   async (args) => {
     let result;
@@ -576,13 +578,13 @@ server.tool(
       .boolean()
       .optional()
       .describe("Whether the task is completed"),
-    position: z.number().optional().describe("The position of the task"),
+    position: z.coerce.number().optional().describe("The position of the task"),
     tasks: z
       .array(
         z.object({
           cardId: z.string().describe("The ID of the card for this task"),
           name: z.string().describe("The name of this task"),
-          position: z.number().optional().describe("The position of this task"),
+          position: z.coerce.number().optional().describe("The position of this task"),
         })
       )
       .optional()

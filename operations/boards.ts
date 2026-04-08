@@ -24,7 +24,7 @@ import * as labels from "./labels.js";
 export const CreateBoardSchema = z.object({
     projectId: z.string().describe("Project ID"),
     name: z.string().describe("Board name"),
-    position: z.number().default(65535).describe(
+    position: z.coerce.number().default(65535).describe(
         "Board position (default: 65535)",
     ),
 });
@@ -55,7 +55,7 @@ export const GetBoardSchema = z.object({
 export const UpdateBoardSchema = z.object({
     id: z.string().describe("Board ID"),
     name: z.string().optional().describe("Board name"),
-    position: z.number().optional().describe("Board position"),
+    position: z.coerce.number().optional().describe("Board position"),
     type: z.string().optional().describe("Board type"),
 });
 

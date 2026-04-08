@@ -52,7 +52,7 @@ export const CreateLabelSchema = z.object({
     boardId: z.string().describe("Board ID"),
     name: z.string().describe("Label name"),
     color: z.enum(VALID_LABEL_COLORS).describe("Label color"),
-    position: z.number().optional().describe("Label position (default: 65535)"),
+    position: z.coerce.number().optional().describe("Label position (default: 65535)"),
 });
 
 /**
@@ -78,7 +78,7 @@ export const UpdateLabelSchema = z.object({
     id: z.string().describe("Label ID"),
     name: z.string().optional().describe("Label name"),
     color: z.enum(VALID_LABEL_COLORS).optional().describe("Label color"),
-    position: z.number().optional().describe("Label position"),
+    position: z.coerce.number().optional().describe("Label position"),
 });
 
 /**
