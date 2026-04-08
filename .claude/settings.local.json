@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "mcp__kanban__mcp_kanban_project_board_manager"
-    ]
-  }
-}
