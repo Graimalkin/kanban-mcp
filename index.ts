@@ -282,6 +282,10 @@ server.tool(
       .string()
       .optional()
       .describe("The ID of the card to get details for"),
+    type: z
+      .enum(["project", "story"])
+      .optional()
+      .describe("Card type for create (default: 'project')"),
   },
   async (args) => {
     let result;
