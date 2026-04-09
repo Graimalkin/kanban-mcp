@@ -23,6 +23,9 @@ export const CreateCardSchema = z.object({
     name: z.string().describe("Card name"),
     description: z.string().optional().describe("Card description"),
     position: z.coerce.number().optional().describe("Card position (default: 65535)"),
+    type: z.enum(["project", "story"]).optional().describe(
+        "Card type ('project' or 'story'; default: 'project')",
+    ),
 });
 
 /**
@@ -73,6 +76,15 @@ export const DuplicateCardSchema = z.object({
     id: z.string().describe("Card ID to duplicate"),
     position: z.coerce.number().optional().describe(
         "Position for the duplicated card (default: 65535)",
+    ),
+    listId: z.string().optional().describe(
+        "Target list ID (defaults to original card's list)",
+    ),
+    boardId: z.string().optional().describe(
+        "Target board ID (defaults to original card's board)",
+    ),
+    name: z.string().optional().describe(
+        "Name for the duplicated card (defaults to 'Copy of <name>')",
     ),
 });
 
@@ -141,9 +153,12 @@ export async function createCard(options: CreateCardOptions) {
             {
                 method: "POST",
                 body: {
+                    // Planka requires `type` ("project" or "story"); default
+                    // to "project" so existing callers continue to work.
+                    type: options.type ?? "project",
                     name: options.name,
                     description: options.description,
-                    position: options.position,
+                    position: options.position ?? 65535,
                 },
             },
         );
@@ -294,6 +309,9 @@ export async function moveCard(
     boardId?: string,
     projectId?: string,
 ) {
+    // `position` defaults to 65535 when the caller omits it. Planka places
+    // cards relative to each other using this integer; picking the default
+    // drops the card at the bottom of the target list.
     try {
         // Use the PATCH endpoint to update the card with the new list ID and position
         const response = await plankaRequest(`/api/cards/${cardId}`, {
@@ -325,30 +343,38 @@ export async function moveCard(
  * @param {number} [position] - The position for the duplicated card
  * @returns {Promise<object>} The duplicated card
  */
-export async function duplicateCard(id: string, position?: number) {
+export async function duplicateCard(
+    id: string,
+    position?: number,
+    listId?: string,
+    boardId?: string,
+    name?: string,
+) {
     try {
-        // First, get the original card to access its name
-        const originalCard = await getCard(id);
+        // Planka's native duplicate endpoint requires boardId and listId in
+        // the body. If the caller didn't specify targets, pull them from the
+        // source card so we duplicate in place.
+        const original = await getCard(id) as any;
+        const targetListId = listId ?? original?.listId;
+        const targetBoardId = boardId ?? original?.boardId;
 
-        // Create a new card with "Copy of" prefix
-        const cardName = originalCard ? `Copy of ${originalCard.name}` : "";
-
-        // Get the list ID from the original card
-        const listId = originalCard ? originalCard.listId : "";
-
-        if (!listId) {
-            throw new Error("Could not determine list ID for card duplication");
+        if (!targetListId || !targetBoardId) {
+            throw new Error(
+                "Could not determine boardId/listId for card duplication",
+            );
         }
 
-        // Create a new card with the same properties but with "Copy of" prefix
-        const newCard = await createCard({
-            listId,
-            name: cardName,
-            description: originalCard.description || "",
-            position: position || 65535,
+        const response = await plankaRequest(`/api/cards/${id}/duplicate`, {
+            method: "POST",
+            body: {
+                boardId: targetBoardId,
+                listId: targetListId,
+                position: position ?? 65535,
+                name: name ?? (original?.name ? `Copy of ${original.name}` : undefined),
+            },
         });
-
-        return newCard;
+        const parsedResponse = CardResponseSchema.parse(response);
+        return parsedResponse.item;
     } catch (error) {
         throw new Error(
             `Failed to duplicate card: ${

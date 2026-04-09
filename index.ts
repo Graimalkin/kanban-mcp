@@ -300,7 +300,8 @@ server.tool(
           listId: args.listId,
           name: args.name,
           description: args.description || "",
-          position: args.position || 0,
+          position: args.position ?? 65535,
+          type: (args.type as "project" | "story" | undefined) ?? "project",
         });
         break;
 
@@ -327,23 +328,29 @@ server.tool(
         break;
 
       case "move":
-        if (!args.id || !args.listId || args.position === undefined)
+        if (!args.id || !args.listId)
           throw new Error(
-            "id, listId, and position are required for move action"
+            "id and listId are required for move action (position defaults to 65535 — bottom of list)"
           );
         result = await cards.moveCard(
           args.id,
           args.listId,
-          args.position,
+          args.position ?? 65535,
           args.boardId,
           args.projectId
         );
         break;
 
       case "duplicate":
-        if (!args.id || args.position === undefined)
-          throw new Error("id and position are required for duplicate action");
-        result = await cards.duplicateCard(args.id, args.position);
+        if (!args.id)
+          throw new Error("id is required for duplicate action");
+        result = await cards.duplicateCard(
+          args.id,
+          args.position ?? 65535,
+          args.listId,
+          args.boardId,
+          args.name
+        );
         break;
 
       case "delete":
