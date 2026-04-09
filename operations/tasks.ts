@@ -20,6 +20,9 @@ export const CreateTaskSchema = z.object({
     cardId: z.string().describe("Card ID"),
     name: z.string().describe("Task name"),
     position: z.coerce.number().optional().describe("Task position (default: 65535)"),
+    taskListId: z.string().optional().describe(
+        "Task list ID on the card (auto-selected / auto-created when omitted)",
+    ),
 });
 
 /**
@@ -102,6 +105,38 @@ const TaskResponseSchema = z.object({
 // Map to store task ID to card ID mapping
 const taskCardIdMap: Record<string, string> = {};
 
+/**
+ * Resolves a usable task-list ID for a card, creating a default "Checklist"
+ * task list if the card has none. Planka moved task creation under
+ * /api/task-lists/:taskListId/tasks, so cards without a task list cannot
+ * accept tasks until one is created.
+ */
+async function resolveTaskListId(cardId: string): Promise<string> {
+    const cardResponse = await plankaRequest(`/api/cards/${cardId}`) as {
+        item?: any;
+        included?: { taskLists?: Array<{ id: string; cardId?: string }> };
+    };
+
+    const taskLists = cardResponse?.included?.taskLists ?? [];
+    const existing = taskLists.find((tl) => tl && tl.cardId === cardId) ??
+        taskLists[0];
+    if (existing?.id) {
+        return existing.id;
+    }
+
+    const created = await plankaRequest(`/api/cards/${cardId}/task-lists`, {
+        method: "POST",
+        body: { name: "Checklist", position: 65535 },
+    }) as { item?: { id: string } };
+
+    if (!created?.item?.id) {
+        throw new Error(
+            `Failed to create default task list for card ${cardId}`,
+        );
+    }
+    return created.item.id;
+}
+
 // Function implementations
 /**
  * Creates a new task for a card
@@ -116,12 +151,15 @@ export async function createTask(params: {
     cardId: string;
     name: string;
     position?: number;
+    taskListId?: string;
 }) {
     try {
         const { cardId, name, position = 65535 } = params;
+        const taskListId = params.taskListId ??
+            (await resolveTaskListId(cardId));
 
         const response: any = await plankaRequest(
-            `/api/cards/${cardId}/tasks`,
+            `/api/task-lists/${taskListId}/tasks`,
             {
                 method: "POST",
                 body: { name, position },
@@ -152,6 +190,10 @@ export async function createTask(params: {
  * @throws {Error} If the batch operation fails completely
  */
 export async function batchCreateTasks(options: BatchCreateTasksOptions) {
+    // Cache per-card task-list resolution so we only hit the API once per
+    // card for a batch — the create endpoint now lives under
+    // /api/task-lists/:taskListId/tasks, not /api/cards/:id/tasks.
+    const taskListCache: Record<string, string> = {};
     try {
         const results: Array<any> = [];
         const successes: Array<any> = [];
@@ -192,6 +234,14 @@ export async function batchCreateTasks(options: BatchCreateTasksOptions) {
             }
 
             try {
+                if (!task.taskListId) {
+                    if (!taskListCache[task.cardId]) {
+                        taskListCache[task.cardId] = await resolveTaskListId(
+                            task.cardId,
+                        );
+                    }
+                    task.taskListId = taskListCache[task.cardId];
+                }
                 const result = await createTask(task);
                 results.push({
                     success: true,
